@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { type TouchEvent, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Player, ApiSquadPlayer } from '@/src/types/player';
 import type { View } from '@/src/types/view';
@@ -184,12 +184,12 @@ export function SquadView({
   const touchStartX = useRef<number | null>(null);
   const didSwipe = useRef(false);
 
-  const handleTouchStart = (e: React.TouchEvent) => {
+  const handleTouchStart = (e: TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
     didSwipe.current = false;
   };
 
-  const handleTouchEnd = (e: React.TouchEvent) => {
+  const handleTouchEnd = (e: TouchEvent) => {
     if (touchStartX.current === null) return;
     const diff = touchStartX.current - e.changedTouches[0].clientX;
     if (Math.abs(diff) > 48) {
