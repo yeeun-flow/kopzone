@@ -1,5 +1,12 @@
 export type FixtureLeague = 'ALL' | 'PL' | 'UCL' | 'FAC';
 
+export type GoalScorer = {
+  player: string;
+  type: 'GOAL' | 'PENALTY' | 'OWN_GOAL';
+  minute: number;
+  assist?: string;
+};
+
 export type Fixture = {
   date: string;
   utcDate?: string;       // ISO 8601 — 카운트다운/정렬용 raw 날짜 (목데이터는 선택)
@@ -13,5 +20,6 @@ export type Fixture = {
   team1Crest?: string;
   team2Crest?: string;
   venue?: string;
+  goalScorers?: GoalScorer[];
 };
 
