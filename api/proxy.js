@@ -1,13 +1,9 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  const pathParts = req.query.path;
-  const pathStr = Array.isArray(pathParts) ? pathParts.join('/') : (pathParts ?? '');
-
-  const target = new URL(`https://api.football-data.org/v4/${pathStr}`);
+export default async function handler(req, res) {
+  const path = req.query.path ?? '';
+  const target = new URL(`https://api.football-data.org/v4/${path}`);
 
   // 쿼리스트링 전달 (status, limit 등)
-  const reqUrl = new URL(req.url!, `http://${req.headers.host}`);
+  const reqUrl = new URL(req.url, `http://${req.headers.host}`);
   reqUrl.searchParams.forEach((value, key) => {
     if (key !== 'path') target.searchParams.set(key, value);
   });
@@ -17,7 +13,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   const data = await response.json();
-
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.status(response.status).json(data);
 }
