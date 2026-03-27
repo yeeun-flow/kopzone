@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { Player, ApiSquadPlayer } from '@/src/types/player';
 import type { View } from '@/src/types/view';
@@ -170,12 +170,48 @@ export function SquadView({
     setFeaturedIdx(idx);
   };
 
+  const goNext = () => {
+    setDirection(1);
+    setFeaturedIdx((i) => (i + 1) % FEATURED_PLAYERS.length);
+  };
+
+  const goPrev = () => {
+    setDirection(-1);
+    setFeaturedIdx((i) => (i - 1 + FEATURED_PLAYERS.length) % FEATURED_PLAYERS.length);
+  };
+
+  // 스와이프 제스처
+  const touchStartX = useRef<number | null>(null);
+  const didSwipe = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    didSwipe.current = false;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 48) {
+      didSwipe.current = true;
+      if (diff > 0) goNext();
+      else goPrev();
+    }
+    touchStartX.current = null;
+  };
+
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-12 pb-12">
 
       {/* ── Featured Player 히어로 ─────────────────────────────────────────── */}
-      <section className="relative h-[600px] bg-surface-low overflow-hidden cursor-pointer group"
-        onClick={() => { onSelectPlayer(featuredPlayer); setView('player'); }}
+      <section
+        className="relative h-[600px] bg-surface-low overflow-hidden cursor-pointer group select-none"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+        onClick={() => {
+          if (didSwipe.current) { didSwipe.current = false; return; }
+          onSelectPlayer(featuredPlayer); setView('player');
+        }}
       >
         {/* 배경 이미지 — 선수 전환 시 crossfade */}
         <AnimatePresence mode="sync">
