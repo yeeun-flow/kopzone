@@ -16,10 +16,10 @@ const TACTICAL_IMG =
   'https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=800&q=80';
 
 const KOP_IMG =
-  'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80';
+  'https://images.unsplash.com/photo-1518604666860-9ed391f76460?w=800&q=80';
 
 const VVD_IMG =
-  'https://www.thesportsdb.com/images/media/player/thumb/v6ky431661865327.jpg';
+  'https://r2.thesportsdb.com/images/media/player/thumb/9fe0tn1720452118.jpg';
 
 // ─── 카운트다운 훅 ────────────────────────────────────────────────────────────
 function useCountdown(utcDate?: string) {
