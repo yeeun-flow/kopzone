@@ -1,4 +1,4 @@
-import type { Fixture, FixtureLeague } from '@/src/types/fixture';
+import type { Fixture, FixtureLeague, GoalScorer } from '@/src/types/fixture';
 import type { StandingsRow } from '@/src/types/standings';
 import type { ApiSquadPlayer } from '@/src/types/player';
 
@@ -102,6 +102,7 @@ function transformMatch(m: any, upcoming: boolean): Fixture {
   const livScore = livIsHome ? m.score?.fullTime?.home : m.score?.fullTime?.away;
   const oppScore = livIsHome ? m.score?.fullTime?.away : m.score?.fullTime?.home;
   return {
+    id: m.id,
     date: formatDate(m.utcDate, m.competition.name),
     utcDate: m.utcDate,
     team1: m.homeTeam.shortName ?? m.homeTeam.name,
@@ -202,22 +203,84 @@ export async function fetchStandings(
  * 2025/26 시즌 기준
  */
 const SHIRT_NUMBERS: Record<number, string> = {
-  1795: '1',   // Alisson
-  7869: '4',   // Virgil van Dijk
-  45681: '10', // Alexis Mac Allister
-  3754: '11',  // Mohamed Salah
-  16347: '8',  // Szoboszlai
-  81793: '38', // Gravenberch
-  9542: '5',   // Konaté
-  7862: '2',   // Gomez
-  7868: '26',  // Robertson
-  175865: '84',// Conor Bradley
-  7459: '18',  // Gakpo
-  7873: '17',  // Curtis Jones
-  3269: '3',   // Wataru Endō
-  186701: '43',// Stefan Bajcetic
-  124778: '6', // Calvin Ramsay
+  // Goalkeepers
+  1795:   '1',  // Alisson Becker
+  84506:  '25', // Giorgi Mamardashvili
+  11629:  '28', // Freddie Woodman
+  182236: '41', // Armin Pecsi
+  // Defenders
+  7862:   '2',  // Joe Gomez
+  7869:   '4',  // Virgil van Dijk
+  9542:   '5',  // Ibrahima Konaté
+  171141: '6',  // Milos Kerkez
+  175865: '12', // Conor Bradley
+  192563: '15', // Giovanni Leoni
+  7868:   '26', // Andrew Robertson
+  128954: '30', // Jeremie Frimpong
+  186701: '43', // Stefan Bajcetic
+  // Midfielders
+  3269:   '3',  // Wataru Endō
+  19334:  '7',  // Florian Wirtz
+  16347:  '8',  // Dominik Szoboszlai
+  45681:  '10', // Alexis Mac Allister
+  7873:   '17', // Curtis Jones
+  81793:  '38', // Ryan Gravenberch
+  230517: '42', // Trey Nyoni
+  // Forwards
+  6486:   '9',  // Alexander Isak
+  3754:   '11', // Mohamed Salah
+  1780:   '14', // Federico Chiesa
+  7459:   '18', // Cody Gakpo
+  152454: '22', // Hugo Ekitike
+  273453: '73', // Rio Ngumoha
 };
+
+// ─── Season Stats (Goals Scored, Clean Sheets) ────────────────────────────────
+
+export async function fetchLiverpoolSeasonStats(): Promise<{ goalsScored: number; cleanSheets: number }> {
+  const data = await cachedFetch(`${BASE_URL}/teams/${LIVERPOOL_ID}/matches?status=FINISHED&limit=50`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const matches: any[] = (data as any).matches ?? [];
+
+  let goalsScored = 0;
+  let cleanSheets = 0;
+
+  for (const m of matches) {
+    if (m.score?.fullTime?.home == null) continue;
+    const livIsHome = m.homeTeam.id === LIVERPOOL_ID;
+    const livGoals: number = livIsHome ? m.score.fullTime.home : m.score.fullTime.away;
+    const oppGoals: number = livIsHome ? m.score.fullTime.away : m.score.fullTime.home;
+    goalsScored += livGoals;
+    if (oppGoals === 0) cleanSheets++;
+  }
+
+  return { goalsScored, cleanSheets };
+}
+
+// ─── Match Goal Scorers ───────────────────────────────────────────────────────
+
+function formatScorerName(fullName: string): string {
+  const parts = fullName.trim().split(' ');
+  if (parts.length <= 1) return fullName.toUpperCase();
+  return `${parts[0][0]}. ${parts.slice(1).join(' ')}`.toUpperCase();
+}
+
+export async function fetchMatchGoalScorers(matchId: number): Promise<GoalScorer[]> {
+  const data = await cachedFetch(`${BASE_URL}/matches/${matchId}`);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const goals: any[] = (data as any).goals ?? [];
+
+  return goals
+    .filter((g: any) => g.team?.id === LIVERPOOL_ID)
+    .map((g: any): GoalScorer => ({
+      player: formatScorerName(g.scorer?.name ?? ''),
+      type: g.type === 'PENALTY' ? 'PENALTY' : g.type === 'OWN_GOAL' ? 'OWN_GOAL' : 'GOAL',
+      minute: g.minute ?? 0,
+      assist: g.assist?.name ? formatScorerName(g.assist.name) : undefined,
+    }));
+}
+
+// ─── Squad ───────────────────────────────────────────────────────────────────
 
 export async function fetchSquad(): Promise<ApiSquadPlayer[]> {
   const data = await cachedFetch(`${BASE_URL}/teams/${LIVERPOOL_ID}`);

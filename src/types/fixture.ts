@@ -8,6 +8,7 @@ export type GoalScorer = {
 };
 
 export type Fixture = {
+  id?: number;            // football-data.org match ID — 골 스코어러 조회용
   date: string;
   utcDate?: string;       // ISO 8601 — 카운트다운/정렬용 raw 날짜 (목데이터는 선택)
   team1: string;

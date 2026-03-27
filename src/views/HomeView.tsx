@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { View } from '@/src/types/view';
-import type { Fixture } from '@/src/types/fixture';
+import type { Fixture, GoalScorer } from '@/src/types/fixture';
 import { useFixtures } from '@/src/hooks/useFixtures';
+import { useSeasonStats } from '@/src/hooks/useSeasonStats';
+import { fetchMatchGoalScorers } from '@/src/services/footballData';
 import { ArrowRight, ChevronLeft, ChevronRight, Trophy, X } from 'lucide-react';
 
 // ─── 이미지 상수 ──────────────────────────────────────────────────────────────
@@ -236,7 +238,7 @@ function FeaturedNewsCard({ onNavigate }: { onNavigate: () => void }) {
 }
 
 // ─── Last Match Card ──────────────────────────────────────────────────────────
-function LastMatchCard({ match }: { match: Fixture }) {
+function LastMatchCard({ match, liveScorers }: { match: Fixture; liveScorers: GoalScorer[] | null }) {
   const livIsHome =
     match.team1.toUpperCase().includes('LIVERPOOL') || match.team1.toUpperCase() === 'LIV';
   const livScore = livIsHome ? match.score1 : match.score2;
@@ -292,10 +294,10 @@ function LastMatchCard({ match }: { match: Fixture }) {
         </div>
       </div>
 
-      {/* 골 스코어러 */}
-      {match.goalScorers && match.goalScorers.length > 0 && (
+      {/* 골 스코어러 — API 실데이터 우선, 없으면 목 데이터 */}
+      {((liveScorers ?? match.goalScorers) ?? []).length > 0 && (
         <div className="space-y-2 mb-8">
-          {match.goalScorers.map((g, i) => (
+          {(liveScorers ?? match.goalScorers ?? []).map((g, i) => (
             <div key={i} className="bg-surface-high flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-3">
                 <span className="font-body font-bold text-sm text-text-primary">{g.player}</span>
@@ -383,9 +385,11 @@ function CaptainQuoteCard() {
 // ─── Bento Section ────────────────────────────────────────────────────────────
 function BentoSection({
   lastMatch,
+  liveScorers,
   onNewsNavigate,
 }: {
   lastMatch: Fixture | undefined;
+  liveScorers: GoalScorer[] | null;
   onNewsNavigate: () => void;
 }) {
   return (
@@ -394,7 +398,7 @@ function BentoSection({
 
       {lastMatch && (
         <div className="mx-4">
-          <LastMatchCard match={lastMatch} />
+          <LastMatchCard match={lastMatch} liveScorers={liveScorers} />
         </div>
       )}
 
@@ -421,14 +425,14 @@ function BentoSection({
 }
 
 // ─── Stats Section ────────────────────────────────────────────────────────────
-const STATS = [
-  { value: '1st', label: ['POSSESSION', '%'], color: 'text-gold' },
-  { value: '24', label: ['GOALS', 'SCORED'], color: 'text-text-primary' },
-  { value: '0.8', label: ['XG', 'CONCEDED'], color: 'text-text-primary' },
-  { value: '12', label: ['CLEAN', 'SHEETS'], color: 'text-primary-red' },
-] as const;
+function StatsSection({ goalsScored, cleanSheets }: { goalsScored: number | null; cleanSheets: number | null }) {
+  const stats = [
+    { value: '1st', label: ['POSSESSION', '%'], color: 'text-gold' },        // 하드코딩 (외부 API 필요)
+    { value: goalsScored != null ? String(goalsScored) : '—', label: ['GOALS', 'SCORED'], color: 'text-text-primary' },
+    { value: '0.8', label: ['XG', 'CONCEDED'], color: 'text-text-primary' }, // 하드코딩 (외부 API 필요)
+    { value: cleanSheets != null ? String(cleanSheets) : '—', label: ['CLEAN', 'SHEETS'], color: 'text-primary-red' },
+  ];
 
-function StatsSection() {
   return (
     <section className="py-16 -mx-4 px-6 bg-surface-lowest">
       <div className="mb-10">
@@ -459,7 +463,7 @@ function StatsSection() {
 
       {/* 2×2 스탯 그리드 */}
       <div className="grid grid-cols-2 gap-px bg-[rgba(92,64,63,0.2)]">
-        {STATS.map(({ value, label, color }) => (
+        {stats.map(({ value, label, color }) => (
           <div key={value + label[0]} className="bg-surface flex flex-col items-center justify-center py-12 px-4">
             <span className={`font-headline font-black text-[64px] italic leading-none tracking-[-2px] ${color} mb-3`}>
               {value}
@@ -479,10 +483,21 @@ function StatsSection() {
 // ─── HomeView ─────────────────────────────────────────────────────────────────
 export function HomeView({ setView }: { setView: (v: View) => void }) {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null);
+  const [liveScorers, setLiveScorers] = useState<GoalScorer[] | null>(null);
+
   const { fixtures, loading: fixturesLoading } = useFixtures();
+  const { stats: seasonStats } = useSeasonStats();
 
   const nextMatch = useMemo(() => fixtures.find((f) => f.upcoming), [fixtures]);
   const lastMatch = useMemo(() => fixtures.find((f) => !f.upcoming), [fixtures]);
+
+  // 마지막 경기 골 스코어러 실데이터 조회
+  useEffect(() => {
+    if (!lastMatch?.id) return;
+    fetchMatchGoalScorers(lastMatch.id)
+      .then((scorers) => setLiveScorers(scorers.length > 0 ? scorers : null))
+      .catch(() => setLiveScorers(null));
+  }, [lastMatch?.id]);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-12 pb-12">
@@ -530,10 +545,13 @@ export function HomeView({ setView }: { setView: (v: View) => void }) {
       {!fixturesLoading && nextMatch && <HeroSection match={nextMatch} />}
 
       {/* ── Bento Grid ───────────────────────────────────────────────────────── */}
-      <BentoSection lastMatch={lastMatch} onNewsNavigate={() => setView('news')} />
+      <BentoSection lastMatch={lastMatch} liveScorers={liveScorers} onNewsNavigate={() => setView('news')} />
 
       {/* ── Stats Section ────────────────────────────────────────────────────── */}
-      <StatsSection />
+      <StatsSection
+        goalsScored={seasonStats?.goalsScored ?? null}
+        cleanSheets={seasonStats?.cleanSheets ?? null}
+      />
     </motion.div>
   );
 }
