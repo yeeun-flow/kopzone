@@ -40,6 +40,21 @@
 - [x] FA Cup 탈락 메시지 처리
 - [x] 앱 타이틀 "Kopzone — Liverpool FC" 변경
 
+### ✅ Phase 5 — 홈화면 Figma 고도화
+- [x] HeroSection: Anfield 배경 이미지 + 다크 그라디언트 오버레이
+- [x] HeroSection: 수직 팀 배치 (LFC 항상 상단, 상대팀 하단)
+- [x] HeroSection: 크레스트 스타일링 (홈 red border+glow, 어웨이 gray border)
+- [x] HeroSection: 카운트다운 opacity 단계 좌측 bar (DAYS 100% → SECS 0%)
+- [x] HeroSection: SECS 숫자 빨간색, TICKET HUB CTA 버튼
+- [x] BentoSection: 피처드 뉴스 카드 (500px 이미지 배경, 메타데이터)
+- [x] BentoSection: Last Match 카드 (72px 스코어, 골 스코어러 목록, FULL MATCH REPORT 버튼)
+- [x] BentoSection: Tactical Analysis 카드 (grayscale 이미지)
+- [x] BentoSection: Fan Culture 카드
+- [x] BentoSection: Captain's Quote (VVD, border-l-4 red)
+- [x] StatsSection: "DOMINANCE IN NUMBERS" 헤더 + 2×2 스탯 그리드
+- [x] `GoalScorer` 타입 추가, `Fixture`에 `goalScorers?` 필드 추가
+- [x] 스쿼드 피처드 캐러셀 스와이프 제스처 (터치 좌우 슬라이드로 선수 전환)
+
 ### ✅ 배포
 - [x] Vercel 자동 배포 (main 브랜치 push → 빌드)
 - [x] 프로덕션 환경변수 설정
@@ -204,3 +219,34 @@ const TTL = isLive ? 30_000 : 300_000;
 | FA Cup 데이터 | 낮음 | 탈락 시 에러로 처리 (설계된 동작) |
 | TopAppBar 메뉴 | 낮음 | 햄버거 아이콘 클릭 시 동작 없음 |
 | News 이미지 깨짐 | 낮음 | 목데이터 외부 이미지 URL 만료 가능성 |
+
+---
+
+## 홈화면 하드코딩 목록 (다음 세션 처리 대상)
+
+### HomeView — BentoSection
+
+| 항목 | 위치 | 실연동 방법 |
+|------|------|------------|
+| 피처드 뉴스 이미지·제목·태그·날짜·작성자 | `FeaturedNewsCard` | NewsAPI 또는 The Guardian API 연동 (Phase 7) |
+| TICKET HUB 버튼 링크 | `HeroSection` | LFC 공식 티켓 URL 연결 또는 외부 링크 처리 |
+| Tactical Analysis 이미지·제목 | `ImageNewsCard` | NewsAPI 카테고리 필터로 실제 기사 연동 |
+| Fan Culture 이미지·제목 | `ImageNewsCard` | NewsAPI 카테고리 필터로 실제 기사 연동 |
+| Captain's Quote 텍스트·사진 | `CaptainQuoteCard` | 선수 인터뷰 API 또는 수동 업데이트 방식 결정 필요 |
+| FULL MATCH REPORT 버튼 | `LastMatchCard` | `setView('news')` 연결 또는 외부 기사 URL |
+| 골 스코어러 데이터 | `LastMatchCard` | `GET /matches/{id}` 로 실제 골 데이터 수집 (`footballData.ts` 확장 필요) |
+
+### HomeView — StatsSection
+
+| 항목 | 현재 값 | 실연동 방법 |
+|------|---------|------------|
+| POSSESSION % | `1st` (하드코딩) | `GET /v4/competitions/2021/matches` 점유율 데이터 없음 → 외부 API 필요 (WhoScored 등, 유료) |
+| GOALS SCORED | `24` (하드코딩) | `GET /v4/competitions/2021/scorers` Liverpool 선수 골 합산으로 자동화 가능 |
+| XG CONCEDED | `0.8` (하드코딩) | xG 데이터는 football-data.org 미제공 → 외부 API 필요 (FBref, StatsBomb 등) |
+| CLEAN SHEETS | `12` (하드코딩) | `GET /teams/64/matches?status=FINISHED` 에서 실점 0 경기 카운트로 자동화 가능 |
+| Prev/Next 화살표 | UI만 존재 | 시즌별 또는 대회별 스탯 슬라이드 구현 필요 |
+
+### 빠르게 자동화 가능한 항목 (football-data.org 무료 플랜 내)
+- **GOALS SCORED**: `GET /competitions/2021/scorers?season=2024` → LFC 선수 골 합산
+- **CLEAN SHEETS**: `GET /teams/64/matches?status=FINISHED` → score2=0 (어웨이일 땐 score1=0) 경기 수 카운트
+- **골 스코어러**: `GET /matches/{id}` → `goals[]` 배열 파싱 (`transformMatch` 확장 필요)
