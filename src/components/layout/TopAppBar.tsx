@@ -10,7 +10,7 @@ export function TopAppBar({ currentView, setView }: { currentView: View; setView
           className="text-2xl font-black italic tracking-tighter text-text-primary uppercase cursor-pointer"
           onClick={() => setView('home')}
         >
-          THE ANFIELD EDIT
+          KOPZONE
         </h1>
       </div>
       <div className="flex items-center gap-4">

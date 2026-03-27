@@ -85,7 +85,7 @@ Browser
 ## 디렉토리 구조
 
 ```
-the-anfield-edit/
+kopzone/
 ├── api/
 │   └── proxy.js                 # Vercel serverless CORS proxy
 ├── src/

@@ -287,7 +287,7 @@ Pace | Shooting | Passing | Dribbling | Defending | Physical
 | 위치 | 내용 |
 |------|------|
 | 좌측 | Menu 아이콘 (현재 미구현) |
-| 중앙 | "THE ANFIELD EDIT" → 클릭 시 HomeView |
+| 중앙 | "KOPZONE" → 클릭 시 HomeView |
 | 우측 | 다음 경기 정보 (Fixtures 뷰) / "LIVE" 뱃지 / Search 아이콘 |
 
 ### BottomNavBar

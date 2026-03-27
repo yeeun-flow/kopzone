@@ -6,7 +6,7 @@
 ## 1) 글로벌 내비게이션
 
 ### Top App Bar (`src/components/layout/TopAppBar.tsx`)
-- **홈 이동**: 타이틀 “THE ANFIELD EDIT” 클릭 → `home`
+- **홈 이동**: 타이틀 “KOPZONE” 클릭 → `home`
 - **기타 아이콘(Menu/Search)**: 현행은 UI만 존재(동작 없음)
 
 ### Bottom Navigation (`src/components/layout/BottomNavBar.tsx`)
