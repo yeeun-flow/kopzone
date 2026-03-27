@@ -148,10 +148,11 @@ const TTL = isLive ? 30_000 : 300_000;
 **문제**: StandingsView 하단 통계 카드가 하드코딩.
 
 **할 일:**
+- [x] GOALS SCORED 자동화 (`useSeasonStats` — 완료)
+- [x] CLEAN SHEETS 자동화 (`useSeasonStats` — 완료)
 - [ ] `GET /v4/competitions/2021/scorers?season=2025` → 득점 순위
 - [ ] Liverpool 선수 골/어시스트 자동 계산
 - [ ] Anfield 홈 경기 승리 수 자동 계산
-- [ ] 클린시트 수 자동 계산 (Alisson 출전 경기 기준)
 - [ ] 경기당 평균 골 계산
 
 ---
@@ -234,19 +235,14 @@ const TTL = isLive ? 30_000 : 300_000;
 | Fan Culture 이미지·제목 | `ImageNewsCard` | NewsAPI 카테고리 필터로 실제 기사 연동 |
 | Captain's Quote 텍스트·사진 | `CaptainQuoteCard` | 선수 인터뷰 API 또는 수동 업데이트 방식 결정 필요 |
 | FULL MATCH REPORT 버튼 | `LastMatchCard` | `setView('news')` 연결 또는 외부 기사 URL |
-| 골 스코어러 데이터 | `LastMatchCard` | `GET /matches/{id}` 로 실제 골 데이터 수집 (`footballData.ts` 확장 필요) |
+| 골 스코어러 데이터 | `LastMatchCard` | 무료 플랜 `/matches/{id}` 에 `goals[]` 미포함 → 유료 플랜 또는 직접 입력 필요 |
 
 ### HomeView — StatsSection
 
 | 항목 | 현재 값 | 실연동 방법 |
 |------|---------|------------|
 | POSSESSION % | `1st` (하드코딩) | `GET /v4/competitions/2021/matches` 점유율 데이터 없음 → 외부 API 필요 (WhoScored 등, 유료) |
-| GOALS SCORED | `24` (하드코딩) | `GET /v4/competitions/2021/scorers` Liverpool 선수 골 합산으로 자동화 가능 |
+| GOALS SCORED | ✅ **API 자동화 완료** | `GET /teams/64/matches?status=FINISHED&limit=50` → LFC 골 합산 (`useSeasonStats`) |
 | XG CONCEDED | `0.8` (하드코딩) | xG 데이터는 football-data.org 미제공 → 외부 API 필요 (FBref, StatsBomb 등) |
-| CLEAN SHEETS | `12` (하드코딩) | `GET /teams/64/matches?status=FINISHED` 에서 실점 0 경기 카운트로 자동화 가능 |
+| CLEAN SHEETS | ✅ **API 자동화 완료** | `GET /teams/64/matches?status=FINISHED&limit=50` → 실점 0 경기 카운트 (`useSeasonStats`) |
 | Prev/Next 화살표 | UI만 존재 | 시즌별 또는 대회별 스탯 슬라이드 구현 필요 |
-
-### 빠르게 자동화 가능한 항목 (football-data.org 무료 플랜 내)
-- **GOALS SCORED**: `GET /competitions/2021/scorers?season=2024` → LFC 선수 골 합산
-- **CLEAN SHEETS**: `GET /teams/64/matches?status=FINISHED` → score2=0 (어웨이일 땐 score1=0) 경기 수 카운트
-- **골 스코어러**: `GET /matches/{id}` → `goals[]` 배열 파싱 (`transformMatch` 확장 필요)
